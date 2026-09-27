@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#143c39" />
+    <meta
+      name="description"
+      content="Procurement operations dashboard for purchase requests and payment monitoring."
+    />
+    <title>Procurement Control</title>
+    <link rel="stylesheet" href="vendor/bootstrap.min.css" />
+    <link rel="stylesheet" href="vendor/dataTables.dataTables.min.css" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="loading" role="status">
+      <span class="spinner-border"></span><span>Preparing your workspace…</span>
+    </div>
+    <aside id="sidebar">
+      <a class="brand" href="#home"
+        ><span class="brand-mark">P<span>▥</span></span
+        ><span class="nav-label"
+          >PROCURE<span class="brand-sub">OPERATIONS WORKSPACE</span></span
+        ></a
+      >
+      <div class="workspace nav-label">
+        DPI <span>Procurement & finance</span>
+      </div>
+      <div class="nav-caption nav-label">WORKSPACE</div>
+      <nav aria-label="Main navigation">
+        <button data-page="home" class="active">
+          <i data-icon="grid"></i
+          ><span class="nav-label">Overview</span></button
+        ><button data-page="pr">
+          <i data-icon="file"></i><span class="nav-label">PR monitoring</span
+          ><span class="nav-count nav-label" id="prCount">0</span></button
+        ><button data-page="rfp">
+          <i data-icon="wallet"></i><span class="nav-label">RFP monitoring</span
+          ><span class="nav-count nav-label" id="rfpCount">1</span></button
+        ><button data-page="analytics">
+          <i data-icon="chart"></i
+          ><span class="nav-label">Analytics</span></button
+        ><button data-page="calendar">
+          <i data-icon="calendar"></i><span class="nav-label">Calendar</span>
+        </button>
+        <div class="nav-caption nav-label">MANAGEMENT</div>
+        <button data-page="settings">
+          <i data-icon="settings"></i><span class="nav-label">Settings</span>
+        </button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="local-note nav-label">
+          <i data-icon="shield"></i
+          ><strong>Your workspace, saved locally</strong>
+          <p>Changes stay in this browser. Export a backup to keep a copy.</p>
+        </div>
+        <div class="profile">
+          <span class="avatar">PC</span>
+          <div class="nav-label">
+            <strong>Procurement team</strong
+            ><small id="roleLabel">Administrator</small>
+          </div>
+        </div>
+      </div>
+    </aside>
+    <div class="app-shell">
+      <header class="topbar">
+        <button
+          id="sidebarToggle"
+          class="icon-button"
+          aria-label="Toggle sidebar"
+          aria-expanded="true"
+        >
+          <i data-icon="menu"></i>
+        </button>
+        <div class="breadcrumb-label">
+          Workspace <span>/</span> <strong id="breadcrumb">Overview</strong>
+        </div>
+        <label class="global-search"
+          ><i data-icon="search"></i
+          ><input
+            id="globalSearch"
+            type="search"
+            placeholder="Search all records…"
+            aria-label="Search all records" /></label
+        ><button
+          id="themeToggle"
+          class="icon-button"
+          aria-label="Toggle dark mode"
+        >
+          <i data-icon="moon"></i></button
+        ><span class="top-avatar">PC</span>
+      </header>
+      <main id="main">
+        <div class="page-heading">
+          <div>
+            <div class="eyebrow">PROCUREMENT INTELLIGENCE</div>
+            <h1 id="pageTitle">Operations overview</h1>
+            <p id="pageSubtitle">
+              A clear view of requests, deliveries and payments.
+            </p>
+          </div>
+          <div class="heading-actions">
+            <span id="saveStatus" class="save-status">Saved locally</span
+            ><button id="refreshButton" class="btn btn-light">
+              <i data-icon="refresh"></i>Refresh</button
+            ><button id="importButton" class="btn btn-primary write-control">
+              <i data-icon="upload"></i>Import Excel
+            </button>
+          </div>
+        </div>
+        <div class="data-banner" id="dataBanner"></div>
+        <div class="toolbar">
+          <div class="dataset-switch" role="group" aria-label="Dataset">
+            <button id="actualMode" class="selected">Workbook data</button
+            ><button id="demoMode">Explore demo</button>
+          </div>
+          <div class="toolbar-right">
+            <label
+              >As of
+              <input type="date" id="asOf" aria-label="Reporting date" /></label
+            ><button
+              id="filtersToggle"
+              class="btn btn-light"
+              aria-expanded="false"
+            >
+              <i data-icon="filter"></i>Filters <span id="filterCount"></span>
+            </button>
+            <div class="dropdown">
+              <button
+                class="btn btn-light dropdown-toggle"
+                data-bs-toggle="dropdown"
+              >
+                <i data-icon="download"></i>Export
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                  <button class="dropdown-item" id="exportExcel">
+                    Excel · filtered records
+                  </button>
+                </li>
+                <li>
+                  <button class="dropdown-item" id="exportPDF">
+                    PDF · filtered records
+                  </button>
+                </li>
+                <li>
+                  <button class="dropdown-item" id="printReport">
+                    Print report
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <section id="filters" class="filter-panel" hidden>
+          <div id="filterSelects"></div>
+          <div class="date-filters">
+            <label
+              >Received / submitted from<input
+                type="date"
+                id="dateFrom"
+                class="form-control" /></label
+            ><label
+              >To<input type="date" id="dateTo" class="form-control" /></label
+            ><button id="clearFilters" class="btn btn-light">
+              Clear filters
+            </button>
+          </div>
+          <small
+            >PR attributes filter RFPs through matching PO/PR references.
+            Supplier and dates apply directly to both.</small
+          >
+        </section>
+        <section id="page-home" class="page-view">
+          <div class="section-kicker">
+            <span>PERFORMANCE SNAPSHOT</span><span id="recordScope"></span>
+          </div>
+          <div id="kpiGrid" class="kpi-grid"></div>
+          <div class="dashboard-grid">
+            <article class="panel trend-panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Purchase request trend</h2>
+                  <p>Monthly intake across departments</p>
+                </div>
+                <span class="pill neutral">Last 6 months</span>
+              </div>
+              <div class="chart-box"><canvas id="trendChart"></canvas></div>
+            </article>
+            <article class="panel gauge-panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Delivery performance</h2>
+                  <p>Completed deliveries with a target date</p>
+                </div>
+                <i data-icon="truck"></i>
+              </div>
+              <div class="gauge-wrap">
+                <canvas id="gaugeChart"></canvas>
+                <div class="gauge-value">
+                  <strong id="gaugeValue">—</strong
+                  ><span>on-time delivery</span>
+                </div>
+              </div>
+              <div class="gauge-footer" id="gaugeFooter"></div>
+            </article>
+            <article class="panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>PR status distribution</h2>
+                  <p>Progress from request to delivery</p>
+                </div>
+              </div>
+              <div class="chart-box small">
+                <canvas id="prStatusChart"></canvas>
+              </div>
+            </article>
+            <article class="panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Procurement SLA</h2>
+                  <p>PO preparation · working days</p>
+                </div>
+                <button class="text-button" data-page="analytics">
+                  View analytics ↗
+                </button>
+              </div>
+              <div id="slaWidget"></div>
+              <div class="chart-box compact">
+                <canvas id="kpiChart"></canvas>
+              </div>
+            </article>
+            <article class="panel actions-panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Pending actions</h2>
+                  <p>What needs your attention</p>
+                </div>
+                <span class="pill warn" id="actionCount">0</span>
+              </div>
+              <div id="pendingActions" class="item-list"></div>
+            </article>
+            <article class="panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Department performance</h2>
+                  <p>Ranked by completed PR share</p>
+                </div>
+              </div>
+              <div id="departmentRanking" class="item-list"></div>
+            </article>
+            <article class="panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Top suppliers</h2>
+                  <p>By total purchase order value</p>
+                </div>
+              </div>
+              <div id="topSuppliers" class="item-list"></div>
+            </article>
+            <article class="panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Payment outlook</h2>
+                  <p>Outstanding amounts by status</p>
+                </div>
+              </div>
+              <div class="chart-box small">
+                <canvas id="paymentChart"></canvas>
+              </div>
+            </article>
+            <article class="panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Recent activity</h2>
+                  <p>Changes made in this workspace</p>
+                </div>
+              </div>
+              <div id="activityTimeline" class="timeline"></div>
+            </article>
+          </div>
+        </section>
+        <section id="page-pr" class="page-view" hidden>
+          <article class="panel table-panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Purchase request register</h2>
+                <p id="prTableInfo"></p>
+              </div>
+              <button class="btn btn-primary write-control" id="addPR">
+                + Add purchase request
+              </button>
+            </div>
+            <div class="table-container">
+              <table id="prTable" class="display" style="width: 100%"></table>
+            </div>
+          </article>
+        </section>
+        <section id="page-rfp" class="page-view" hidden>
+          <div id="rfpKpis" class="mini-kpis"></div>
+          <article class="panel table-panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Request for payment register</h2>
+                <p>Payment status recalculates against the reporting date.</p>
+              </div>
+              <button class="btn btn-primary write-control" id="addRFP">
+                + Add payment request
+              </button>
+            </div>
+            <div class="table-container">
+              <table id="rfpTable" class="display" style="width: 100%"></table>
+            </div>
+          </article>
+        </section>
+        <section id="page-analytics" class="page-view" hidden>
+          <div class="analytics-grid">
+            <article class="panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Requests per department</h2>
+                  <p>Volume by requesting team</p>
+                </div>
+              </div>
+              <div class="chart-box">
+                <canvas id="departmentChart"></canvas>
+              </div>
+            </article>
+            <article class="panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Delivery outcomes</h2>
+                  <p>Completed deliveries only</p>
+                </div>
+              </div>
+              <div class="chart-box"><canvas id="deliveryChart"></canvas></div>
+            </article>
+            <article class="panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>RFP status summary</h2>
+                  <p>Payment requests by current status</p>
+                </div>
+              </div>
+              <div class="chart-box"><canvas id="rfpChart"></canvas></div>
+            </article>
+            <article class="panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Procurement funnel</h2>
+                  <p>Cumulative milestones reached</p>
+                </div>
+              </div>
+              <div id="funnel"></div>
+            </article>
+            <article class="panel wide-panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Procurement activity heatmap</h2>
+                  <p>
+                    PR intake by department and month · darker means more
+                    requests
+                  </p>
+                </div>
+              </div>
+              <div id="heatmap" class="table-container"></div>
+            </article>
+            <article class="panel wide-panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Calculation guide</h2>
+                  <p>Based on the formulas and thresholds in your workbook</p>
+                </div>
+              </div>
+              <div id="rulesGuide"></div>
+            </article>
+          </div>
+        </section>
+        <section id="page-calendar" class="page-view" hidden>
+          <article class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2 id="calendarTitle">Schedule</h2>
+                <p>Delivery targets and payment deadlines</p>
+              </div>
+              <div class="calendar-controls">
+                <button
+                  id="previousMonth"
+                  class="btn btn-light"
+                  aria-label="Previous month"
+                >
+                  ←</button
+                ><button id="currentMonth" class="btn btn-light">Today</button
+                ><button
+                  id="nextMonth"
+                  class="btn btn-light"
+                  aria-label="Next month"
+                >
+                  →
+                </button>
+              </div>
+            </div>
+            <div class="calendar-legend">
+              <span class="pill good">PR delivery</span
+              ><span class="pill warn">RFP payment</span>
+            </div>
+            <div id="calendarGrid"></div>
+            <div id="calendarAgenda"></div>
+          </article>
+        </section>
+        <section id="page-settings" class="page-view" hidden>
+          <div class="settings-grid">
+            <article class="panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Monitoring rules</h2>
+                  <p>Changes apply to the selected dataset.</p>
+                </div>
+              </div>
+              <form id="settingsForm">
+                <label
+                  >New item SLA (working days)<input
+                    class="form-control"
+                    name="newItem"
+                    type="number"
+                    min="1"
+                    max="365"
+                    required /></label
+                ><label
+                  >Replenishment SLA (working days)<input
+                    class="form-control"
+                    name="replenishment"
+                    type="number"
+                    min="1"
+                    max="365"
+                    required /></label
+                ><label
+                  >Due soon reminder (calendar days)<input
+                    class="form-control"
+                    name="dueSoon"
+                    type="number"
+                    min="0"
+                    max="365"
+                    required /></label
+                ><label
+                  >RFP default aging limit, if no terms (calendar days)<input
+                    class="form-control"
+                    name="defaultLimit"
+                    type="number"
+                    min="1"
+                    max="365"
+                    required /></label
+                ><label
+                  >Non-working holidays (one YYYY-MM-DD per line)<textarea
+                    class="form-control"
+                    name="holidays"
+                    rows="3"
+                    placeholder="2026-12-25"
+                  ></textarea></label
+                ><button class="btn btn-primary write-control" type="submit">
+                  Save monitoring rules
+                </button>
+              </form>
+            </article>
+            <article class="panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Workspace preferences</h2>
+                  <p>Personal display and future access integration</p>
+                </div>
+              </div>
+              <label class="settings-label"
+                >UI role preview<select id="roleSelect" class="form-select">
+                  <option value="admin">Administrator</option>
+                  <option value="editor">Procurement editor</option>
+                  <option value="viewer">Read-only viewer</option>
+                </select></label
+              >
+              <p class="helper-text">
+                Role preview controls editing actions only. This browser-only
+                app does not provide authentication or secure access control.
+              </p>
+              <hr />
+              <h3>Workbook data quality</h3>
+              <div id="qualityInfo"></div>
+              <button class="btn btn-light mt-3" id="downloadIssues">
+                Export source exceptions
+              </button>
+              <hr />
+              <h3>Back up your workspace</h3>
+              <p class="helper-text">
+                Excel export includes filtered registers and monitoring rules.
+                Clear filters to export every record. Actual and demo data are
+                saved separately.
+              </p>
+              <button class="btn btn-light" id="backupAll">
+                Download full Excel backup
+              </button>
+            </article>
+          </div>
+        </section>
+        <footer>
+          PROCURE <span>PR & RFP monitoring</span><span id="footerDate"></span>
+        </footer>
+      </main>
+    </div>
+    <div
+      class="modal fade"
+      id="recordModal"
+      tabindex="-1"
+      aria-labelledby="recordModalTitle"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="modal-title fs-5" id="recordModalTitle">Record</h2>
+            <button
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <form id="recordForm">
+            <div class="modal-body">
+              <div id="recordFields" class="record-fields"></div>
+              <div id="recordError" class="text-danger" role="alert"></div>
+            </div>
+            <div class="modal-footer">
+              <button
+                type="button"
+                id="deleteRecord"
+                class="btn btn-outline-danger me-auto"
+              >
+                Delete record</button
+              ><button
+                type="button"
+                class="btn btn-light"
+                data-bs-dismiss="modal"
+              >
+                Cancel</button
+              ><button type="submit" class="btn btn-primary">
+                Save record
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div
+      class="modal fade"
+      id="importModal"
+      tabindex="-1"
+      aria-labelledby="importTitle"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 id="importTitle" class="modal-title fs-5">Import workbook</h2>
+            <button
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <p>
+              Supports the original monitoring workbook and exports from this
+              application. Review the results before adding records.
+            </p>
+            <input
+              type="file"
+              id="importFile"
+              accept=".xlsx,.xls,.csv"
+              class="form-control"
+            />
+            <div id="importSummary" class="mt-3"></div>
+            <label class="mt-3"
+              >Import method<select id="importMethod" class="form-select">
+                <option value="merge">
+                  Merge · update matching IDs, add new records
+                </option>
+                <option value="replace">Replace current dataset</option>
+              </select></label
+            >
+            <p class="helper-text mt-2">
+              PRs match by PR number; RFPs by RFP number. Unidentified rows are
+              retained in source exceptions. Import targets the currently
+              selected dataset.
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-light" data-bs-dismiss="modal">Cancel</button
+            ><button class="btn btn-primary" id="confirmImport" disabled>
+              Import records
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      id="toastArea"
+      class="toast-container position-fixed bottom-0 end-0 p-3"
+      aria-live="polite"
+    ></div>
+    <div id="printArea"></div>
+    <script src="vendor/jquery.min.js"></script>
+    <script src="vendor/bootstrap.bundle.min.js"></script>
+    <script src="vendor/chart.umd.js"></script>
+    <script src="vendor/dataTables.min.js"></script>
+    <script src="vendor/xlsx.full.min.js"></script>
+    <script src="vendor/jspdf.umd.min.js"></script>
+    <script src="vendor/jspdf.plugin.autotable.min.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
